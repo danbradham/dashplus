@@ -42,7 +42,15 @@ Dash is the default mode of the Dash+ UI. If you enter some text and press retur
 looked up in the Dash+ registry. You can also chain Dash commands by entering more than one separated by
 spaces.
 
-In the preview image above, we've entered `wave(3, 12, 1) ts(2)`. *wave* will generate a sine curve with keys every 12 frames then *ts* will offset each animation curve in steps of 2 frames.
+Examples
+********
+Use *wave* and *timeStep* to produce regular sine curves offset in time.
+
+:code:`wave(3, 12, 1) ts(2)`
+
+*wave* will generate a sine curve with keys every 12 frames then *ts* will offset each animation curve in steps of 2 frames. The keyframes wave produces are at the maximum and minimum values of a sine curve, to give ourselves a better rest state, let's use *key_value* to set the first and last keys values to 0.
+
+:code:`kv(0, 0) kv(-1, 0)`
 
 Clicking a command from the menu will insert the command at the end of your current input. Making it very easy to build up a chain of Dash commands.
 
