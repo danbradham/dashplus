@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "dashplus"
+version = "0.1.0"
+description = "A superset of Dash for Autodesk Maya."
+authors = ["Dan Bradham <danielbradham@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/danbradham/dashplus"
+
+[tool.poetry.dependencies]
+python = "^2.7"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
