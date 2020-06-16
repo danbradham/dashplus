@@ -8,7 +8,7 @@ had a hand in the original feature.
 
 from __future__ import print_function
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 __author__ = 'Dan Bradham'
 __email__ = 'danielbradham@gmail.com'
 __license__ = 'MIT'
@@ -21,9 +21,7 @@ from collections import namedtuple
 from types import ModuleType
 from itertools import groupby
 from collections import deque
-from traceback import print_exc
 import sys
-import re
 
 from PySide2 import QtWidgets, QtGui, QtCore
 
@@ -31,6 +29,13 @@ from maya import cmds
 import DashLegacy
 import Dash
 import DashCommand
+
+
+# Python Compat
+try:
+    basestring
+except NameError:
+    basestring = (str,)
 
 
 if '_dash' not in sys.modules:
@@ -438,9 +443,9 @@ class DashPlusUI(QtWidgets.QDialog):
 
         # Window attributes
         self.setWindowFlags(
-            QtCore.Qt.Popup |
-            QtCore.Qt.FramelessWindowHint |
-            QtCore.Qt.NoDropShadowWindowHint
+            QtCore.Qt.Popup
+            | QtCore.Qt.FramelessWindowHint
+            | QtCore.Qt.NoDropShadowWindowHint
         )
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.setGeometry(rect)
@@ -507,7 +512,8 @@ class DashPlusUI(QtWidgets.QDialog):
             if not UIState.pinned:
                 self.close()
             log('Success!')
-        except Exception as e:
+        except Exception:
+            log('Execution Failed!')
             raise
 
 
@@ -550,7 +556,7 @@ def undo(name='unnamed', undo_on_fail=True):
     try:
         cmds.undoInfo(openChunk=True, chunkName=name)
         yield
-    except:
+    except Exception:
         exc_raised = True
         raise
     finally:
@@ -689,6 +695,7 @@ def find_command(name):
         if name in (cmd['DashCommand'], cmd['ShortDashCommand']):
             return cmd
 
+
 def command(name, short_name, hint='()', icon=None):
     '''Dash command decorator. Apply to functions to make them available
     from the Dash line.
@@ -765,7 +772,10 @@ def grouped_channels():
     for node_name in objects:
         for channel in channel_names:
             channels.append(Channel(node_name, channel))
-    return [(n, list(g)) for n, g in groupby(channels, key=lambda c: c.channel)]
+    return [
+        (n, list(g))
+        for n, g in groupby(channels, key=lambda c: c.channel)
+    ]
 
 
 class Channel(object):
@@ -827,19 +837,39 @@ class Channel(object):
 
     def time(self, index=None):
         index = self.to_index(index)
-        return cmds.keyframe(self.path, q=True, index=index, timeChange=True)[0]
+        return cmds.keyframe(
+            self.path,
+            q=True,
+            index=index,
+            timeChange=True
+        )[0]
 
     def value(self, index=None):
         index = self.to_index(index)
-        return cmds.keyframe(self.path, q=True, index=index, valueChange=True)[0]
+        return cmds.keyframe(
+            self.path,
+            q=True,
+            index=index,
+            valueChange=True
+        )[0]
 
     def times(self, index=None):
         index = self.to_index(index)
-        return cmds.keyframe(self.path, q=True, index=index, timeChange=True)
+        return cmds.keyframe(
+            self.path,
+            q=True,
+            index=index,
+            timeChange=True
+        )
 
     def values(self, index=None):
         index = self.to_index(index)
-        return cmds.keyframe(self.path, q=True, index=index, valueChange=True)
+        return cmds.keyframe(
+            self.path,
+            q=True,
+            index=index,
+            valueChange=True
+        )
 
     def keys(self):
         index = (0, self.num_keys)
@@ -986,7 +1016,12 @@ class math:
             return value
 
 
-@command('step_scale', 'ss', hint='(min, max, [pivot])', icon=':/stepTangent.png')
+@command(
+    'step_scale',
+    'ss',
+    hint='(min, max, [pivot])',
+    icon=':/stepTangent.png'
+)
 def step_scale(*args):
     '''Stagger the values of multiple objects from a value pivot.'''
 
@@ -1042,7 +1077,12 @@ def scale(*args):
             channel.set(channel.get() * amount)
 
 
-@command('scale_time', 'st', hint='(amount, [pivot])', icon=':/setKeyOnScale.png')
+@command(
+    'scale_time',
+    'st',
+    hint='(amount, [pivot])',
+    icon=':/setKeyOnScale.png'
+)
 def scale_time(*args):
     '''Scale times from a value pivot.'''
 
@@ -1120,7 +1160,12 @@ def gen_keys(*args):
             channel.set_key(frame)
 
 
-@command('wave', 'w', hint='(n, step, amplitude, [start])', icon=':/sineCurveProfile.png')
+@command(
+    'wave',
+    'w',
+    hint='(n, step, amplitude, [start])',
+    icon=':/sineCurveProfile.png'
+)
 def wave(*args):
     '''Generate a sine wave of keys.
 
@@ -1164,7 +1209,12 @@ def fit01(*args):
             channel.set(new_value)
 
 
-@command('fit', 'f', hint='(min, max, old_min, old_max)', icon=':/setRange.svg')
+@command(
+    'fit',
+    'f',
+    hint='(min, max, old_min, old_max)',
+    icon=':/setRange.svg'
+)
 def fit(*args):
     '''Remap values from an old range to a new range.'''
 

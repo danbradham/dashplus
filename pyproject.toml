@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dashplus"
-version = "0.1.0"
+version = "0.1.1"
 description = "A superset of Dash for Autodesk Maya."
 authors = ["Dan Bradham <danielbradham@gmail.com>"]
 license = "MIT"
