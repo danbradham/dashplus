@@ -8,7 +8,7 @@ had a hand in the original feature.
 
 from __future__ import print_function
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 __author__ = 'Dan Bradham'
 __email__ = 'danielbradham@gmail.com'
 __license__ = 'MIT'
@@ -23,6 +23,7 @@ from itertools import groupby
 from collections import deque
 import sys
 
+# This is a maya only tool - we can rely on Qt for Python (PySide2)
 from PySide2 import QtWidgets, QtGui, QtCore
 
 from maya import cmds
@@ -31,11 +32,10 @@ import Dash
 import DashCommand
 
 
-# Python Compat
-try:
-    basestring
-except NameError:
+# Python 3 Compatability
+if sys.version_info > (2, 7):
     basestring = (str,)
+    operator.div = operator.truediv
 
 
 if '_dash' not in sys.modules:
@@ -61,8 +61,11 @@ def install():
     Patches DashCommand.DashCommand to make it easy to add additional commands.
     '''
 
+    if cmds.about(batch=True):
+        # Disabled in batch mode
+        return
+
     if not cmds.pluginInfo('MASH', query=True, loaded=True):
-        log('Loading MASH plugin...')
         cmds.loadPlugin('MASH')
 
     DashLegacy.DashUI = DashPlusUI
@@ -74,7 +77,7 @@ def install():
         cmd['Icon'] = None
         _registry.append(cmd)
 
-    log('Installed.')
+    log('Installed.', in_view=False)
     help()
 
 
@@ -84,10 +87,61 @@ def uninstall():
     Removes the DashCommand.DashCommand patch.
     '''
 
+    if cmds.about(batch=True):
+        # Disabled in batch mode
+        return
+
     DashLegacy.DashUI = _dash.DashUILegacy
     Dash.DashUI = _dash.DashUI
 
-    log('Uninstalled.')
+    log('Uninstalled.', in_view=False)
+
+
+def help():
+    '''Print the list of available dash commands and some instructions.'''
+
+    print('\n')
+    print(sys.modules[__name__].__doc__)
+
+    header = '{DashCommand}: {Description}'
+    invoke = '    {DashCommand}{Hint}\n    {ShortDashCommand}{Hint}\n'
+    print('Available dash commands')
+    print('-----------------------\n')
+    for cmd in _registry:
+        print(header.format(**cmd))
+        print(invoke.format(**cmd))
+
+
+def log(message, *args, **kwargs):
+    '''Log a message to the console.'''
+
+    if isinstance(message, basestring):
+        message = message % args
+
+    if kwargs.get('in_view', True):
+        cmds.inViewMessage(
+            amg='dashplus:' + message,
+            pos='midCenter',
+            fade=True,
+        )
+
+    print('DASHPLUS | %s' % message)
+
+
+def error(message, *args, **kwargs):
+    '''Raise a RuntimeError and show the message in the viewport.'''
+
+    if isinstance(message, basestring):
+        message = message % args
+
+    if kwargs.get('in_view', True):
+        cmds.inViewMessage(
+            amg='dashplus:' + message,
+            pos='midCenter',
+            fade=True,
+        )
+
+    cmds.error('DASHPLUS | %s' % message)
 
 
 class DashPlus(object):
@@ -563,47 +617,6 @@ def undo(name='unnamed', undo_on_fail=True):
         cmds.undoInfo(closeChunk=True)
         if exc_raised:
             cmds.undo()
-
-
-def help():
-    '''Print the list of available dash commands and some instructions.'''
-
-    print('\n')
-    print(sys.modules[__name__].__doc__)
-
-    header = '{DashCommand}: {Description}'
-    invoke = '    {DashCommand}{Hint}\n    {ShortDashCommand}{Hint}\n'
-    print('Available dash commands')
-    print('-----------------------\n')
-    for cmd in _registry:
-        print(header.format(**cmd))
-        print(invoke.format(**cmd))
-
-
-def log(message, *args):
-    '''Log a message to the console.'''
-
-    if isinstance(message, basestring):
-        message = message % args
-    cmds.inViewMessage(
-        amg=message,
-        pos='midCenter',
-        fade=True,
-    )
-    print('DASHPLUS | %s' % message)
-
-
-def error(message, *args):
-    '''Raise a RuntimeError and show the message in the viewport.'''
-
-    if isinstance(message, basestring):
-        message = message % args
-    cmds.inViewMessage(
-        amg=message,
-        pos='midCenter',
-        fade=True,
-    )
-    cmds.error('DASHPLUS | %s' % message)
 
 
 def get_dash_file():
